@@ -21,6 +21,7 @@ import {
 } from '@angular/core/rxjs-interop';
 import { CoursesServiceWithFetch } from '../services/courses-fetch.service';
 import { openEditCourseDialog } from '../edit-course-dialog/edit-course-dialog.component';
+import { LoadingService } from '../loading/loading.service';
 
 @Component({
   selector: 'home',
@@ -45,6 +46,8 @@ export class HomeComponent {
     return courses.filter((course) => course.category === 'ADVANCED');
   });
 
+  messagesService = inject(MessagesService);
+
   constructor() {
     effect(() => {
       console.log(`Beginner courses:`, this.beginnerCourses());
@@ -61,12 +64,19 @@ export class HomeComponent {
       const courses = await this.coursesService.loadAllCourses();
       this.#courses.set(courses.sort(sortCoursesBySeqNo));
     } catch (err) {
-      alert('Error loading courses!');
-      console.log('Error loading courses', err);
+      this.messagesService.showMessage(
+        `Error loading courses!`,
+        'error'
+      );
+      console.error(err);
     }
   }
 
   onCourseUpdated(updatedCourse: Course) {
+    if(!updatedCourse) {
+      return;
+    }
+    
     const courses = this.#courses();
     const newCourses = courses.map((course) =>
       course.id === updatedCourse.id ? updatedCourse : course
@@ -80,9 +90,16 @@ export class HomeComponent {
       const courses = this.#courses();
       const  newCourses = courses.filter((course) => course.id !== courseId);
       this.#courses.set(newCourses);
+      this.messagesService.showMessage(
+        `Course deleted successfully!`,
+        'success'
+      );
     } catch (err) {
-      console.log('Error deleting course', err);
-      alert('Error deleting course!');
+      this.messagesService.showMessage(
+        `Error deleting course!`,
+        'error'
+      );
+      console.log(err);
     }
   }
 
