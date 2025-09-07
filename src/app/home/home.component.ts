@@ -20,6 +20,7 @@ import {
   outputFromObservable,
 } from '@angular/core/rxjs-interop';
 import { CoursesServiceWithFetch } from '../services/courses-fetch.service';
+import { openEditCourseDialog } from '../edit-course-dialog/edit-course-dialog.component';
 
 @Component({
   selector: 'home',
@@ -32,6 +33,8 @@ export class HomeComponent {
 
   coursesService = inject(CoursesService);
 
+  dialog = inject(MatDialog);
+
   beginnerCourses = computed(() => {
     const courses = this.#courses();
     return courses.filter((course) => course.category === 'BEGINNER');
@@ -43,10 +46,9 @@ export class HomeComponent {
   });
 
   constructor() {
-
     effect(() => {
-        console.log(`Beginner courses:`, this.beginnerCourses());
-        console.log(`Advanced courses:`, this.advancedCourses());
+      console.log(`Beginner courses:`, this.beginnerCourses());
+      console.log(`Advanced courses:`, this.advancedCourses());
     });
 
     this.loadCourses().then(() =>
@@ -62,5 +64,45 @@ export class HomeComponent {
       alert('Error loading courses!');
       console.log('Error loading courses', err);
     }
+  }
+
+  onCourseUpdated(updatedCourse: Course) {
+    const courses = this.#courses();
+    const newCourses = courses.map((course) =>
+      course.id === updatedCourse.id ? updatedCourse : course
+    );
+    this.#courses.set(newCourses);
+  }
+
+  async onCourseDeleted(courseId: string) {
+    try {
+      await this.coursesService.deleteCourse(courseId);
+      const courses = this.#courses();
+      const  newCourses = courses.filter((course) => course.id !== courseId);
+      this.#courses.set(newCourses);
+    } catch (err) {
+      console.log('Error deleting course', err);
+      alert('Error deleting course!');
+    }
+  }
+
+  async onAddCourse() {
+    const newCourse = await openEditCourseDialog(
+      this.dialog, {
+        mode: 'create',
+        title: 'Create New Course',
+      }
+    );
+
+    if (!newCourse) {
+      return;
+    }
+
+    const newCourses = [
+      ...this.#courses(),
+      newCourse
+    ];
+    this.#courses.set(newCourses)
+
   }
 }
