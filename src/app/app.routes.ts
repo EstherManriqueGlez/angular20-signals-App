@@ -10,7 +10,7 @@ export const routes: Routes = [
   {
     path: '',
     component: HomeComponent,
-    canActivate: [isUserAuthenticated]
+    // canActivate: [isUserAuthenticated]
   },
   {
     path: "login",
