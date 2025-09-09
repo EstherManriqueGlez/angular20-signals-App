@@ -53,18 +53,16 @@ export class HomeComponent {
   advancedList = viewChild<CoursesCardListComponent>('advancedList');
 
   constructor() {
-
     effect(() => {
-      console.log(`Beginner list: `, this.beginnersList());
-    })
+      // console.log(`Beginner list: `, this.beginnersList());
+    });
     effect(() => {
-      console.log(`Beginner courses:`, this.beginnerCourses());
-      console.log(`Advanced courses:`, this.advancedCourses());
+      // console.log(`Beginner courses:`, this.beginnerCourses());
+      // console.log(`Advanced courses:`, this.advancedCourses());
     });
 
-    this.loadCourses().then(() =>
-      console.log(`All Courses loaded:`, this.#courses())
-    );
+    this.loadCourses();
+    // .then(() => console.log(`All Courses loaded:`, this.#courses()));
   }
 
   async loadCourses() {
@@ -72,19 +70,16 @@ export class HomeComponent {
       const courses = await this.coursesService.loadAllCourses();
       this.#courses.set(courses.sort(sortCoursesBySeqNo));
     } catch (err) {
-      this.messagesService.showMessage(
-        `Error loading courses!`,
-        'error'
-      );
+      this.messagesService.showMessage(`Error loading courses!`, 'error');
       console.error(err);
     }
   }
 
   onCourseUpdated(updatedCourse: Course) {
-    if(!updatedCourse) {
+    if (!updatedCourse) {
       return;
     }
-    
+
     const courses = this.#courses();
     const newCourses = courses.map((course) =>
       course.id === updatedCourse.id ? updatedCourse : course
@@ -96,38 +91,68 @@ export class HomeComponent {
     try {
       await this.coursesService.deleteCourse(courseId);
       const courses = this.#courses();
-      const  newCourses = courses.filter((course) => course.id !== courseId);
+      const newCourses = courses.filter((course) => course.id !== courseId);
       this.#courses.set(newCourses);
       this.messagesService.showMessage(
         `Course deleted successfully!`,
         'success'
       );
     } catch (err) {
-      this.messagesService.showMessage(
-        `Error deleting course!`,
-        'error'
-      );
+      this.messagesService.showMessage(`Error deleting course!`, 'error');
       console.log(err);
     }
   }
 
   async onAddCourse() {
-    const newCourse = await openEditCourseDialog(
-      this.dialog, {
-        mode: 'create',
-        title: 'Create New Course',
-      }
-    );
+    const newCourse = await openEditCourseDialog(this.dialog, {
+      mode: 'create',
+      title: 'Create New Course',
+    });
 
     if (!newCourse) {
       return;
     }
 
-    const newCourses = [
-      ...this.#courses(),
-      newCourse
-    ];
-    this.#courses.set(newCourses)
+    const newCourses = [...this.#courses(), newCourse];
+    this.#courses.set(newCourses);
+  }
 
+  injector = inject(Injector);
+
+  onToObservableExample() {
+    const courses$ = toObservable(this.#courses, {
+      injector: this.injector,
+    });
+
+    courses$.subscribe((courses) => console.log(`courses$: `, courses));
+  }
+
+  onToSignalExample() {
+    try {
+      const courses$ = from(this.coursesService.loadAllCourses()).pipe(
+        catchError((err) => {
+          console.log(`Error caught in catchError`, err);
+          throw err;
+        })
+      );
+
+      const courses = toSignal(courses$, {
+        injector: this.injector,
+      });
+
+      effect(
+        () => {
+          console.log(`Courses: `, courses());
+        },
+        {
+          injector: this.injector,
+        }
+      );
+      // setInterval(() => {
+      //   console.log(`Courses after interval: `, courses());
+      // }, 1000);
+    } catch (err) {
+      console.log(`Error in catch block: `, err);
+    }
   }
 }
