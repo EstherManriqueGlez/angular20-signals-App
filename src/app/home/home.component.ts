@@ -5,6 +5,7 @@ import {
   inject,
   Injector,
   signal,
+  viewChild,
 } from '@angular/core';
 import { CoursesService } from '../services/courses.service';
 import { Course, sortCoursesBySeqNo } from '../models/course.model';
@@ -48,7 +49,14 @@ export class HomeComponent {
 
   messagesService = inject(MessagesService);
 
+  beginnersList = viewChild<CoursesCardListComponent>('beginnersList');
+  advancedList = viewChild<CoursesCardListComponent>('advancedList');
+
   constructor() {
+
+    effect(() => {
+      console.log(`Beginner list: `, this.beginnersList());
+    })
     effect(() => {
       console.log(`Beginner courses:`, this.beginnerCourses());
       console.log(`Advanced courses:`, this.advancedCourses());
