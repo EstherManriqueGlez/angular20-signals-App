@@ -23,7 +23,7 @@ export class CoursesCardListComponent {
 
   constructor() {
     effect(()=> {
-      console.log('Course cards: ', this.courseCard());
+      // console.log('Course cards: ', this.courseCard());
     })
   }
 
